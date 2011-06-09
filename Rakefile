@@ -8,45 +8,41 @@ rescue Bundler::BundlerError => e
   exit e.status_code
 end
 require 'rake'
+require 'rspec'
+require 'rspec/core/rake_task'
 
-require 'jeweler'
-Jeweler::Tasks.new do |gem|
-  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "checkm"
-  gem.homepage = "http://github.com/cbeer/checkm"
-  gem.license = "MIT"
-  gem.summary = "Checkm is a general-purpose text-based file manifest format"
-  gem.email = "chris@cbeer.info"
-  gem.authors = ["Chris Beer"]
-  # Include your dependencies below. Runtime dependencies are required when using your gem,
-  # and development dependencies are only needed for development (ie running rake tasks, tests, etc)
-  #  gem.add_runtime_dependency 'jabber4r', '> 0.1'
-  #  gem.add_development_dependency 'rspec', '> 1.2.3'
-end
-Jeweler::RubygemsDotOrgTasks.new
-
-require 'rake/testtask'
-Rake::TestTask.new(:test) do |test|
-  test.libs << 'lib' << 'test'
-  test.pattern = 'test/**/test_*.rb'
-  test.verbose = true
+RSpec::Core::RakeTask.new() do |t|
+  t.pattern = "./spec/*_spec.rb" # don't need this, it's default.
+  t.rcov = true
+  t.rcov_opts = ['--exclude', 'spec', '--exclude', 'gems']
 end
 
-require 'rcov/rcovtask'
-Rcov::RcovTask.new do |test|
-  test.libs << 'test'
-  test.pattern = 'test/**/test_*.rb'
-  test.verbose = true
+desc "Generate code coverage"
+RSpec::Core::RakeTask.new(:rcov) do |t|
+  t.pattern = "./spec/**/*_spec.rb" # don't need this, it's default.
+  t.rcov = true
+  t.rcov_opts = ['--exclude', 'spec', '--exclude', 'gems']
 end
 
-task :default => :test
+task :default => :rcov
+task :hudson => [:rcov, :doc]
 
-require 'rake/rdoctask'
-Rake::RDocTask.new do |rdoc|
-  version = File.exist?('VERSION') ? File.read('VERSION') : ""
+# Use yard to build docs
+begin
+  require 'yard'
+  require 'yard/rake/yardoc_task'
+  project_root = File.expand_path(File.dirname(__FILE__))
+  doc_destination = File.join(project_root, 'doc')
 
-  rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "checkm #{version}"
-  rdoc.rdoc_files.include('README*')
-  rdoc.rdoc_files.include('lib/**/*.rb')
+  YARD::Rake::YardocTask.new(:doc) do |yt|
+    yt.files   = Dir.glob(File.join(project_root, 'lib', '**', '*.rb')) + 
+                 [ File.join(project_root, 'README.textile') ]
+    yt.options = ['--output-dir', doc_destination, '--readme', 'README.rdoc']
+  end
+rescue LoadError
+  desc "Generate YARD Documentation"
+  task :doc do
+    abort "Please install the YARD gem to generate rdoc."
+  end
 end
+

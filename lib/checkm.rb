@@ -1,4 +1,3 @@
-require 'time'
 require 'checkm/manifest'
 require 'checkm/entry'
 
