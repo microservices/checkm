@@ -11,10 +11,7 @@ Gem::Specification.new do |s|
   s.authors = ["Chris Beer"]
   s.date = %q{2010-11-27}
   s.email = %q{chris@cbeer.info}
-  s.extra_rdoc_files = [
-    "LICENSE.txt",
-    "README.textile"
-  ]
+
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
