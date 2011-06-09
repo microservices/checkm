@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.email = %q{chris@cbeer.info}
   s.extra_rdoc_files = [
     "LICENSE.txt",
-    "README.rdoc"
+    "README.textile"
   ]
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
