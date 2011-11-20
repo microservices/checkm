@@ -9,14 +9,14 @@ module Checkm
     attr_reader :path
     attr_accessor :entries
   
-    def initialize str_io_or_file, args = {}
+    def initialize str_io_or_file = '', args = {}
       @source = str_io_or_file
       @args = args
       @entries = []
 
       @eof = args[:eof]
       @version = args[:version]
-      @fields = args[:ields]
+      @fields = args[:fields]
 
       @path = args[:path]
       @path ||= Dir.pwd
@@ -38,6 +38,8 @@ module Checkm
     end
   
     def add path_or_entry, args = {}
+      args[:options] ||= options_for_entries
+
       @entries << Checkm::Entry.create(path_or_entry, args) 
     end
 

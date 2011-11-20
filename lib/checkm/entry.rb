@@ -7,8 +7,6 @@ module Checkm
       options = args.delete(:options) || {}
       path = options[:path] || Dir.pwd
 
-      return Checkm::Entry.new(file_or_path, options) if file_or_path.is_a? Array or file_or_path.is_a? Hash
-
       file = file_or_path if file.is_a? File
       file ||= File.open(File.expand_path(file_or_path, path))
 
@@ -22,6 +20,7 @@ module Checkm
     end
 
     attr_reader :values
+    attr_reader :fields
   
     def initialize source, options = {}
       @fields = options[:fields] || Manifest::BASE_FIELDS 
