@@ -1,5 +1,8 @@
 require 'checkm/manifest'
 require 'checkm/entry'
+require 'digest/md5'
+require 'digest/sha1'
+require 'digest/sha2'
 
 module Checkm
   # Size (in bytes) to read (in chunks) to compute checksums

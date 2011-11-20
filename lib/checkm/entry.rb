@@ -1,44 +1,69 @@
 require 'time'
 module Checkm  
   class Entry
-    BASE_FIELDS = ['sourcefileorurl', 'alg', 'digest', 'length', 'modtime', 'targetfileorurl']
+    def self.create file_or_path, args = {}
+      return file_or_path if file_or_path.is_a? Entry
+
+      options = args.delete(:options) || {}
+      path = options[:path] || Dir.pwd
+
+      return Checkm::Entry.new(file_or_path, options) if file_or_path.is_a? Array or file_or_path.is_a? Hash
+
+      file = file_or_path if file.is_a? File
+      file ||= File.open(File.expand_path(file_or_path, path))
+
+      args[:sourcefileorurl] = File.expand_path(file.path).gsub(path + "/", '') if file.respond_to? :path
+      args[:alg] ||= 'md5'
+      args[:digest] ||= Checkm.checksum(file, args[:alg])
+      args[:length] ||= File.size(file.path)
+      args[:modtime] ||= file.mtime.utc.xmlschema
+
+      Checkm::Entry.new(args, options)
+    end
+
     attr_reader :values
   
-    def self.create path, args = {}
-      base = args[:base] || Dir.pwd
-      alg = args[:alg] || 'md5'
-      file = File.new File.join(base, path)
-  
-      "%s | %s | %s | %s | %s | %s" % [path, alg, Checkm.checksum(file, alg), File.size(file.path), file.mtime.utc.xmlschema, nil]
+    def initialize source, options = {}
+      @fields = options[:fields] || Manifest::BASE_FIELDS 
+      @path = options[:path]
+      @path ||= Dir.pwd
+
+      @values = case source
+      when Hash
+        tmp = {}
+        source.each { |k, v| tmp[k.to_s.downcase.to_sym] = v }
+        @fields.map { |k| source[k.to_s.downcase.to_sym] }
+      when Array
+        source
+      when String
+        source.split("|").map { |x| x.strip }
+      end
     end
-  
-    def initialize line, manifest = nil
-      @line = line.strip
-      @include = false
-      @fields = BASE_FIELDS
-      @fields = manifest.fields if manifest and manifest.fields
-      @values = line.split('|').map { |s| s.strip }
-      @manifest = manifest
+
+    def [] idx
+      values[idx] rescue nil
+    end
+
+    def []= idx, value
+      values[idx] = value rescue nil
+    end
+
+    def to_s
+      values.join(" | ")
     end
   
     def method_missing(sym, *args, &block)
-      @values[@fields.index(sym.to_s.downcase) || BASE_FIELDS.index(sym.to_s.downcase)] rescue nil
+      self[@fields.map { |x| x.downcase }.index(sym.to_s.downcase) || Manifest::BASE_FIELDS.map { |x| x.downcase }.index(sym.to_s.downcase)]
     end
   
-  
     def valid?
-      return source_exists? && valid_checksum? && valid_multilevel? # xxx && valid_length? && valid_modtime?
+      return File.exists?(source) && valid_checksum? # xxx && valid_length? && valid_modtime?
     end
   
     private
     def source
       file = sourcefileorurl
-      file = file[1..-1] if file =~ /^@/
-      File.join(@manifest.path, file)
-    end
-  
-    def source_exists?
-      return File.exists? source
+      File.join(@path, file)
     end
   
     def valid_checksum?
@@ -54,11 +79,6 @@ module Checkm
   
     def valid_modtime?
       throw NotImplementedError
-    end
-  
-    def valid_multilevel?
-      return true unless sourcefileorurl =~ /^@/
-      return Manifest.parse(open(source).read, File.dirname(source))
     end
   end
 end
