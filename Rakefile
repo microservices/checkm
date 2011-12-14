@@ -12,8 +12,12 @@ end
 
 Bundler::GemHelper.install_tasks
 
-namespace :namaste do
+namespace :checkm do
   RSpec::Core::RakeTask.new(:rspec) do |t|
+    t.pattern = "./spec/**/*_spec.rb"
+  end
+
+  RSpec::Core::RakeTask.new(:rcov) do |t|
     t.pattern = "./spec/**/*_spec.rb"
     t.rcov = true
     t.rcov_opts = ["--exclude", "gems\/,spec\/"]
@@ -40,4 +44,6 @@ namespace :namaste do
 end
 
 desc "Run the rspec tests, aggregate coverage data, and build the Yard docs"
-task :hudson => ["namaste:rspec","namaste:doc"]
+task :hudson => ["rspec:rcov","rspec:doc"]
+
+task :default => ["checkm:rspec"]
