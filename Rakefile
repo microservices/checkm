@@ -1,7 +1,5 @@
-require 'rake'
 require 'rubygems'
 require 'bundler'
-require 'rspec/core/rake_task'
 begin
   Bundler.setup(:default, :development)
 rescue Bundler::BundlerError => e
@@ -12,38 +10,36 @@ end
 
 Bundler::GemHelper.install_tasks
 
-namespace :checkm do
-  RSpec::Core::RakeTask.new(:rspec) do |t|
-    t.pattern = "./spec/**/*_spec.rb"
-  end
+require 'rake'
+require 'rspec'
+require 'rspec/core/rake_task'
 
-  RSpec::Core::RakeTask.new(:rcov) do |t|
-    t.pattern = "./spec/**/*_spec.rb"
+desc 'Default: run specs.'
+task :default => :spec
+
+RSpec::Core::RakeTask.new do |t|
+  if ENV['COVERAGE'] and RUBY_VERSION =~ /^1.8/
     t.rcov = true
-    t.rcov_opts = ["--exclude", "gems\/,spec\/"]
-  end
-
-  # Use yard to build docs
-  begin
-    require 'yard'
-    require 'yard/rake/yardoc_task'
-    project_root = File.expand_path("#{File.dirname(__FILE__)}")
-    doc_destination = File.join(project_root, 'doc')
-
-    YARD::Rake::YardocTask.new(:doc) do |yt|
-      yt.files   = Dir.glob(File.join(project_root, 'lib', '**', '*.rb')) + 
-                   [ File.join(project_root, 'README.textile') ]
-      yt.options = ['--output-dir', doc_destination, '--readme', 'README.textile']
-    end
-  rescue LoadError
-    desc "Generate YARD Documentation"
-    task :doc do
-      abort "Please install the YARD gem to generate rdoc."
-    end
+    t.rcov_opts = ['--exclude', 'spec', '--exclude', 'gems']
   end
 end
 
-desc "Run the rspec tests, aggregate coverage data, and build the Yard docs"
-task :hudson => ["rspec:rcov","rspec:doc"]
+# Use yard to build docs
+begin
+  require 'yard'
+  require 'yard/rake/yardoc_task'
+  project_root = File.expand_path(File.dirname(__FILE__))
+  doc_destination = File.join(project_root, 'doc')
 
-task :default => ["checkm:rspec"]
+  YARD::Rake::YardocTask.new(:doc) do |yt|
+    yt.files   = Dir.glob(File.join(project_root, 'lib', '**', '*.rb')) + 
+                 [ File.join(project_root, 'README.md') ]
+    yt.options = ['--output-dir', doc_destination, '--readme', 'README.md']
+  end
+rescue LoadError
+  desc "Generate YARD Documentation"
+  task :doc do
+    abort "Please install the YARD gem to generate rdoc."
+  end
+end
+
